@@ -1,0 +1,54 @@
+name: Build with Makefile (macOS + Linux + Windows)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]  # 三个平台
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ===== Linux (Ubuntu) =====
+      - name: Install GCC & Make (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential gcc make
+
+      # ===== macOS =====
+      - name: Install GCC & Make (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew update
+          brew install gcc make
+
+      # ===== Windows =====
+      - name: Install MinGW & Make (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install mingw make  # 使用 Chocolatey 安装 MinGW 和 Make
+
+      # ===== 检查 Makefile 是否存在 =====
+      - name: Verify Makefile
+        run: |
+          ls -l Makefile || { echo "Error: Makefile not found!"; exit 1; }
+
+      # ===== 运行 Make =====
+      - name: Run Make
+        run: make  # 在 Windows 上会自动调用 MinGW 的 make
+
+      # ===== 上传编译产物（可选） =====
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.os }}-binary
+          path: bin/  # 替换为你的可执行文件路径
