@@ -1,0 +1,33 @@
+name: Build with Makefile (macOS & Linux)
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install GCC (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y gcc make
+
+      - name: Install GCC (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install gcc@11
+          echo "CC=gcc-11" >> $GITHUB_ENV
+
+      - name: Run Make
+        run: make
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.os }}-binary
+          path: bin/myprogram
